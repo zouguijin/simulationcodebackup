@@ -35,6 +35,8 @@ namespace nfd {
 			void
 			setMmtEntry(const Face& outface, const shared_ptr<pit::Entry>& pitEntry);
 
+			
+
 			static void 
 			getcurrentTime();
 
@@ -47,6 +49,7 @@ namespace nfd {
 
 		private:
 			int counter;
+			static const time::nanoseconds MEASUREMENTS_LIFETIME;
 
 			//------2018-08-08---------
 			// std::map<std::String, measurements::Measurements> mmt_map;

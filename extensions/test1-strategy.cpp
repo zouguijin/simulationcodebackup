@@ -18,6 +18,9 @@ using namespace boost;
 
 namespace nfd {
 	namespace fw {
+
+		// const time::nanoseconds Test1Strategy::MEASUREMENTS_LIFETIME = time::seconds(4);
+
 		Test1Strategy::Test1Strategy(Forwarder& forwarder, const Name& name) 
 			: Strategy(forwarder)
 		{
@@ -114,7 +117,8 @@ namespace nfd {
 			const Name& mmtEntryName(mmtEntryUri); // string -> Name
 			
 			measurements::Entry* mmtEntry = this->getMeasurements().get(mmtEntryName); // insert into mmt
-
+			// this->getMeasurements().extendLifetime(*mmtEntry, MEASUREMENTS_LIFETIME);
+			
 			// -----------Test Code----------------
 			string prefixA("0c/bupt/zou/A");
 			string prefixTest("/0c/bupt/zou/A");
