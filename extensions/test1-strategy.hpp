@@ -33,9 +33,7 @@ namespace nfd {
 
 			//------2018-08-08---------
 			void
-			setMmtEntry(const Face& outface, const shared_ptr<pit::Entry>& pitEntry);
-
-			
+			setMmtEntry(const Face& outface, const shared_ptr<pit::Entry>& pitEntry);			
 
 			static void 
 			getcurrentTime();
@@ -45,6 +43,11 @@ namespace nfd {
 
 			// ------------------------
 
+			// ----------2018-08-14------------
+			std::string
+			getMostContentPrefix(const Face& outface);
+
+			// --------------------------------
 
 
 		private:

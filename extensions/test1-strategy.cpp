@@ -89,6 +89,8 @@ namespace nfd {
 				// cout << "outFaceUri: " << outFaceUri << endl;
 
 				this->setMmtEntry(outFace, pitEntry);
+				string mostContentPrefix = this->getMostContentPrefix(outFace);
+				cout << "MOST_CONTENT_PREFIX: " << mostContentPrefix << endl;
 
 				this->sendInterest(pitEntry, outFace, interest);
 			}
@@ -119,33 +121,61 @@ namespace nfd {
 			measurements::Entry* mmtEntry = this->getMeasurements().get(mmtEntryName); // insert into mmt
 			// this->getMeasurements().extendLifetime(*mmtEntry, MEASUREMENTS_LIFETIME);
 			
-			// -----------Test Code----------------
-			string prefixA("0c/bupt/zou/A");
-			string prefixTest("/0c/bupt/zou/A");
+		}
 
-			Name name(prefixA);
-			name_tree::NameTree& nt = this->getMeasurements().m_measurements.m_nameTree;
+		string 
+		Test1Strategy::getMostContentPrefix(const Face& outFace) 
+		{
+			const string& prefixA("/bupt/zou/A");
+			const string& prefixB("/bupt/zou/B");
+			const string& prefixC("/bupt/zou/C");
 
-			getcurrentTime();
-			cout << "mmt size: " << this->getMeasurements().m_measurements.size() << endl;
+			vector<string> prefixVec;
+			prefixVec.push_back(prefixA);
+			// prefixVec.push_back(prefixA);
+			// prefixVec.push_back(prefixA);
 
-			auto&& enumerable = nt.partialEnumerate(name);
-			for (const name_tree::Entry& nte : enumerable) 
+			unsigned int MOST_CONTENT_COUNTER = 0;
+			string MOST_CONTENT_PREFIX = "";
+
+			const string OUTFACE_HOST = outFace.getLocalUri().getHost();
+			const string OUTFACE_URI = getOutFaceUri(OUTFACE_HOST);
+
+			for(int i = 0; i < prefixVec.size(); i++)
 			{
-				cout << "Loop: " << endl;
-				if(name.isPrefixOf(nte.getName()) && prefixTest.compare(nte.getName().toUri()) != 0) 
+				string uriCurrent = OUTFACE_URI + prefixVec.at(i);
+				string uriTestCurrent = "/" + uriCurrent;
+
+				cout << "uriCurrent: " << uriCurrent << endl;
+				cout << "uriTestCurrent: " << uriTestCurrent << endl;
+				cout << "mmt size: " << this->getMeasurements().m_measurements.size() << endl;
+
+				Name name(uriCurrent);
+				name_tree::NameTree& nt = this->getMeasurements().m_measurements.m_nameTree;
+								
+				auto&& enumerable = nt.partialEnumerate(name);
+				unsigned int tmpCounter = 0;
+				for (const name_tree::Entry& nte : enumerable) 
 				{
+					cout << "Loop: " << endl;
+					if(name.isPrefixOf(nte.getName()) && uriTestCurrent.compare(nte.getName().toUri()) != 0) 
+					{
 
-					cout << "---bupt/zou/A--- child: " << nte.getName().toUri() << endl;
+						cout << "---bupt/zou/A--- child: " << nte.getName().toUri() << endl;
+						tmpCounter++;
+					}
+
 				}
-
+				cout << "Counter: " << tmpCounter << endl;
+				if(tmpCounter > MOST_CONTENT_COUNTER)
+				{
+					MOST_CONTENT_COUNTER = tmpCounter;
+					MOST_CONTENT_PREFIX = prefixVec.at(i);
+				}
+				cout << "MOST_CONTENT_COUNTER: " << MOST_CONTENT_COUNTER << endl;
+				cout << "MOST_CONTENT_PREFIX: " << MOST_CONTENT_PREFIX << endl;
 			}
-			//measurements::Entry* contentEntry
-			
-			// cout << "mmtSize: " << this->getMeasurements().m_measurements.size() << endl;
-
-
-
+			return MOST_CONTENT_PREFIX;
 		}
 
 
