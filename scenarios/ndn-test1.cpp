@@ -23,8 +23,8 @@ main(int argc, char* argv[])
 
   // ----------Parameter---------------------------
   const std::string INTERESTS_PER_SECOND = "1";
-  const std::string DATA_PAYLOADSIZE = "1024";
-  const int CS_SIZE = 10;
+  const std::string DATA_PAYLOADSIZE = "1000";
+  const int CS_SIZE = 5;
 
   //-----------------------------------------------
 
@@ -53,6 +53,8 @@ main(int argc, char* argv[])
   	Ptr<Node> c1 = Names::Find<Node>("consumer1");
   	Ptr<Node> c2 = Names::Find<Node>("consumer2");
   	Ptr<Node> c3 = Names::Find<Node>("consumer3");
+    Ptr<Node> c4 = Names::Find<Node>("consumer4");
+    Ptr<Node> c5 = Names::Find<Node>("consumer5");
   	// Method 2 --- shiyongyu jiti peizhi yiqun jiedian
   	NodeContainer routeNodes;
   	routeNodes.Add(Names::Find<Node>("router1"));
@@ -79,16 +81,23 @@ main(int argc, char* argv[])
   	consumerHelper.SetPrefix(prefixA);
   	ApplicationContainer c1Container = consumerHelper.Install(c1);
 
-  	consumerHelper.SetPrefix(prefixA);
+  	consumerHelper.SetPrefix(prefixB);
   	ApplicationContainer c2Container = consumerHelper.Install(c2);
 
-  	consumerHelper.SetPrefix(prefixA);
+  	consumerHelper.SetPrefix(prefixC);
   	ApplicationContainer c3Container = consumerHelper.Install(c3);
 
-    c1Container.Start(Seconds(0));
-    c2Container.Start(Seconds(10));
-    c3Container.Start(Seconds(20));
+    consumerHelper.SetPrefix(prefixA);
+    ApplicationContainer c4Container = consumerHelper.Install(c4);
 
+    consumerHelper.SetPrefix(prefixA);
+    ApplicationContainer c5Container = consumerHelper.Install(c5);
+
+    c1Container.Start(Seconds(0));
+    c2Container.Start(Seconds(5));
+    c3Container.Start(Seconds(10));
+    c4Container.Start(Seconds(15));
+    c5Container.Start(Seconds(20));
 
   	// Producer APP
   	AppHelper producerHelper("ns3::ndn::Producer");
@@ -97,15 +106,15 @@ main(int argc, char* argv[])
   	producerHelper.SetPrefix(prefixA);
   	producerHelper.Install(p1);
 
-  	// producerHelper.SetPrefix(prefixA);
-  	// producerHelper.Install(p2);
+  	producerHelper.SetPrefix(prefixB);
+  	producerHelper.Install(p2);
 
-  	// producerHelper.SetPrefix(prefixC);
-  	// producerHelper.Install(p3);
+  	producerHelper.SetPrefix(prefixC);
+  	producerHelper.Install(p3);
 
   	ndnGlobalRoutingHelper.AddOrigins(prefixA, p1);
-  	ndnGlobalRoutingHelper.AddOrigins(prefixA, p2);
-  	ndnGlobalRoutingHelper.AddOrigins(prefixA, p3);
+  	ndnGlobalRoutingHelper.AddOrigins(prefixB, p2);
+  	ndnGlobalRoutingHelper.AddOrigins(prefixC, p3);
 
   	// Calculate and install FIBs
   	GlobalRoutingHelper::CalculateRoutes();

@@ -5,10 +5,8 @@
 #include "core/logger.hpp"
 #include "core/common.hpp"
 
-#include <chrono>
 #include <ctime>
 #include <boost/algorithm/string.hpp>
-#include <vector>
 
 #include "table/measurements-entry.hpp"
 #include "table/name-tree.hpp"
@@ -28,6 +26,9 @@ namespace nfd {
 			cout << "---Test1Strategy Constructor!---" << endl;
 
 			getcurrentTime();
+
+			// init mapFaceLinkData and mapFaceTimePoint
+			this->init();
 
 			counter = 0;
 			this->setInstanceName(makeInstanceName(name, getStrategyName()));
@@ -72,8 +73,7 @@ namespace nfd {
 				}
 				//NFD_LOG_INFO("Forwarding NEW Interest: " << pitEntry->getInterest() << " To Face: " 
 				//	<< outFace.getId());
-				cout 
-					<< " NEW Interest: " << pitEntry->getName() << endl
+				cout << " NEW Interest: " << pitEntry->getName() << endl;
 					// << " To Face: " << outFace.getId() 
 					// << " Face Uri: " << outFace.getLocalUri() << endl
 					// << " Scheme: " << outFace.getLocalUri().getScheme() << endl
@@ -82,15 +82,15 @@ namespace nfd {
 					// << " Path: " << outFace.getLocalUri().getPath() << endl
 					// << " toString() " << outFace.getLocalUri().toString()
 					// << endl 
-					<< " InData: " << outFace.getCounters().nInData << endl;
+					// << " InData: " << outFace.getCounters().nInData << endl;
 				
 				
 				string outFaceUri = getOutFaceUri(outFace.getLocalUri().getHost());
 				// cout << "outFaceUri: " << outFaceUri << endl;
 
 				this->setMmtEntry(outFace, pitEntry);
-				string mostContentPrefix = this->getMostContentPrefix(outFace);
-				cout << "MOST_CONTENT_PREFIX: " << mostContentPrefix << endl;
+				// string mostContentPrefix = getMostContentPrefix(outFace);
+				// cout << "MOST_CONTENT_PREFIX: " << mostContentPrefix << endl;
 
 				this->sendInterest(pitEntry, outFace, interest);
 			}
@@ -100,10 +100,26 @@ namespace nfd {
 		Test1Strategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                       const Face& inFace, const Data& data)
 		{
-			//cout << "---Test1Strategy::beforeSatisfyInterest()---" << endl;
-			// cout << "Number of Data is: " << ++counter << endl;
-			//cout << "Data Prefix: " << data << endl;
-			cout << "";
+			// ------global parameter--------
+			// 4 parameters to store link capacity according to Face Uri:
+			// 07LinkCapacity 0aLinkCapacity 0cLinkCapacity 0eLinkCapacity
+			// 4 parameters to store InData's amount according to Face Uri: (InData - xxInData == diff)
+			// 07InDataCounter 0aInDataCounter 0cInDataCounter 0eInDataCounter
+			// 4 Time Point according to Face Uri: (now() - timePoint == duration)
+			// 07TimePoint 0aTimePoint 0cTimePoint 0eTimePoint
+			// WHEN now() - timePoint == duration, THEN flowRate = diff*Data_Size / duration (bit/s)
+			cout << "---Test1Strategy::beforeSatisfyInterest()---" << endl;
+			if(this->isCongested(inFace, data)) 
+			{
+				cout << "Congested!" << endl;
+				string mostContentPrefix = this->getMostContentPrefix(inFace);
+				cout << "CS Policy should firstly store: " << mostContentPrefix << endl;
+			}
+			else
+			{
+				cout << "Not Congested!" << endl;
+			}
+			
 		}
 
 		void
@@ -118,7 +134,8 @@ namespace nfd {
 
 			const Name& mmtEntryName(mmtEntryUri); // string -> Name
 			
-			measurements::Entry* mmtEntry = this->getMeasurements().get(mmtEntryName); // insert into mmt
+			this->getMeasurements().get(mmtEntryName);
+			// measurements::Entry* mmtEntry = this->getMeasurements().get(mmtEntryName); // insert into mmt
 			// this->getMeasurements().extendLifetime(*mmtEntry, MEASUREMENTS_LIFETIME);
 			
 		}
@@ -126,14 +143,14 @@ namespace nfd {
 		string 
 		Test1Strategy::getMostContentPrefix(const Face& outFace) 
 		{
-			const string& prefixA("/bupt/zou/A");
-			const string& prefixB("/bupt/zou/B");
-			const string& prefixC("/bupt/zou/C");
+			// const string& prefixA("/bupt/zou/A");
+			// const string& prefixB("/bupt/zou/B");
+			// const string& prefixC("/bupt/zou/C");
 
-			vector<string> prefixVec;
-			prefixVec.push_back(prefixA);
+			// vector<string> prefixVec;
 			// prefixVec.push_back(prefixA);
-			// prefixVec.push_back(prefixA);
+			// prefixVec.push_back(prefixB);
+			// prefixVec.push_back(prefixC);
 
 			unsigned int MOST_CONTENT_COUNTER = 0;
 			string MOST_CONTENT_PREFIX = "";
@@ -146,9 +163,9 @@ namespace nfd {
 				string uriCurrent = OUTFACE_URI + prefixVec.at(i);
 				string uriTestCurrent = "/" + uriCurrent;
 
-				cout << "uriCurrent: " << uriCurrent << endl;
-				cout << "uriTestCurrent: " << uriTestCurrent << endl;
-				cout << "mmt size: " << this->getMeasurements().m_measurements.size() << endl;
+				// cout << "uriCurrent: " << uriCurrent << endl;
+				// cout << "uriTestCurrent: " << uriTestCurrent << endl;
+				// cout << "mmt size: " << this->getMeasurements().m_measurements.size() << endl;
 
 				Name name(uriCurrent);
 				name_tree::NameTree& nt = this->getMeasurements().m_measurements.m_nameTree;
@@ -157,11 +174,11 @@ namespace nfd {
 				unsigned int tmpCounter = 0;
 				for (const name_tree::Entry& nte : enumerable) 
 				{
-					cout << "Loop: " << endl;
+					// cout << "Loop: " << endl;
 					if(name.isPrefixOf(nte.getName()) && uriTestCurrent.compare(nte.getName().toUri()) != 0) 
 					{
 
-						cout << "---bupt/zou/A--- child: " << nte.getName().toUri() << endl;
+						cout << "---bupt/zou/--- child: " << nte.getName().toUri() << endl;
 						tmpCounter++;
 					}
 
@@ -187,6 +204,131 @@ namespace nfd {
 		     std::time_t 
 		     	currentTime = std::chrono::system_clock::to_time_t(currentTimeP);
 		     cout << std::ctime(&currentTime) << endl;
+		}
+
+
+		std::chrono::system_clock::time_point
+		Test1Strategy::getCurrentTimePoint()
+		{
+			std::chrono::system_clock::time_point 
+				currentTimePoint = std::chrono::system_clock::now();
+			return currentTimePoint;
+		}
+
+		bool
+		Test1Strategy::isCongested(const Face& outFace, const Data& data)
+		{
+			if(this->isFaceCounterTimeOut(outFace))
+			{
+				string faceHost = outFace.getLocalUri().getHost();
+				string faceUri = getOutFaceUri(faceHost);
+				int curInData = outFace.getCounters().nInData;
+
+				std::map<string, vector<int>>::iterator it = mapFaceLinkData.find(faceUri);
+				int linkCapaciy = it->second.at(0);
+				int beforeInData = it->second.at(1);
+				
+				int flowRate 
+					= (curInData - beforeInData) * DATA_SIZE / (FACECOUNTER_DURATION / 1000);
+				
+				// reset beforeInData
+				it->second.at(1) = curInData;
+
+				cout << "Face Counter TimeOut" << endl
+					 << "Face Uri: " << faceUri << endl
+					 << "Link Capacity: " << linkCapaciy
+					 << " BeforeInData: " << beforeInData
+					 << " curInData: " << curInData << endl
+					 << "Flow Rate: " << flowRate << endl;
+
+
+				if(flowRate > 0.9 * linkCapaciy)
+				{
+					// congesting || congested
+					// string mostContentPrefix = this->getMostContentPrefix(outFace);
+					// cout << "CS Policy should firstly store: " << mostContentPrefix << endl;
+					return true;
+				}
+				else 
+				{
+					return false;
+				}
+			}
+			else 
+			{
+				cout << "Not TimeOut - ";
+				return false;
+			}
+		}
+
+		bool
+		Test1Strategy::isFaceCounterTimeOut(const Face& outFace) 
+		{
+			// Face operation and get face uri
+			// Use uri to get related timepoint before: beforeTP
+			// duration = curTP - beforeTP  >  DURATION ?
+			// if yes, return true
+			std::chrono::system_clock::time_point curTP = getCurrentTimePoint();
+			string faceHost = outFace.getLocalUri().getHost();
+			string faceUri = getOutFaceUri(faceHost);
+
+			std::map<string, std::chrono::system_clock::time_point>::iterator it;
+			it = mapFaceTimePoint.find(faceUri);
+			if(it == mapFaceTimePoint.end()) 
+			{
+				return false;
+			}
+
+			std::chrono::system_clock::time_point beforeTP = it->second;
+			int duration = std::chrono::duration_cast<std::chrono::milliseconds>(curTP - beforeTP).count();
+			if(duration >= FACECOUNTER_DURATION)
+			{
+				it->second = curTP;
+				return true;
+			}
+			else 
+			{
+				return false;
+			}
+		}
+
+		void
+		Test1Strategy::init()
+		{
+			// Face Uri: "07" "0a" "0c" "0e"
+			// mapFaceTimePoint
+			std::chrono::system_clock::time_point 
+				currentTimePoint = std::chrono::system_clock::now();
+			mapFaceTimePoint.insert({"0b", currentTimePoint});
+			mapFaceTimePoint.insert({"0e", currentTimePoint});
+			mapFaceTimePoint.insert({"10", currentTimePoint});
+			mapFaceTimePoint.insert({"12", currentTimePoint});
+
+			// mapFaceLinkData
+			// 07LinkCapacity: 10000000 bps 0aLinkCapacity: 3000000 bps 
+			// 0cLinkCapacity: 1000000  bps 0eLinkCapacity: 5000000 bps
+			int face07[2] = {10000000, 0};
+			vector<int> face07Vec(face07, face07 + 2);
+			int face0a[2] = {1000000, 0};
+			vector<int> face0aVec(face0a, face0a + 2);
+			int face0c[2] = {3000000, 0};
+			vector<int> face0cVec(face0c, face0c + 2);
+			int face0e[2] = {5000000, 0};
+			vector<int> face0eVec(face0e, face0e + 2);
+			mapFaceLinkData.insert({"0b", face07Vec});
+			mapFaceLinkData.insert({"0e", face0aVec});
+			mapFaceLinkData.insert({"10", face0cVec});
+			mapFaceLinkData.insert({"12", face0eVec});
+
+			const string& prefixA("/bupt/zou/A");
+			const string& prefixB("/bupt/zou/B");
+			const string& prefixC("/bupt/zou/C");
+			prefixVec.push_back(prefixA);
+			prefixVec.push_back(prefixB);
+			prefixVec.push_back(prefixC);
+
+			FACECOUNTER_DURATION = 2000;
+			DATA_SIZE = 10240;
 		}
 
 		string

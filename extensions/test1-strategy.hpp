@@ -8,6 +8,8 @@
 #include "fw/strategy.hpp"
 #include "fw/algorithm.hpp"
 #include <map>
+#include <chrono>
+#include <vector>
 
 
 
@@ -47,6 +49,25 @@ namespace nfd {
 			std::string
 			getMostContentPrefix(const Face& outface);
 
+			static std::chrono::system_clock::time_point
+			// static void
+			getCurrentTimePoint();
+
+			bool
+			isCongested(const Face& outFace, const Data& data); 
+
+			bool
+			isFaceCounterTimeOut(const Face& outFace); 
+
+			void
+			init();
+			// {
+				// Face Uri: "07" "0a" "0c" "0e"
+				// 07LinkCapacity: 10000000 bps 0aLinkCapacity: 3000000 bps 
+				// 0cLinkCapacity: 1000000  bps 0eLinkCapacity: 5000000 bps
+				// FACECOUNTER_DURATION = 2s
+			// }
+
 			// --------------------------------
 
 
@@ -54,8 +75,23 @@ namespace nfd {
 			int counter;
 			static const time::nanoseconds MEASUREMENTS_LIFETIME;
 
-			//------2018-08-08---------
-			// std::map<std::String, measurements::Measurements> mmt_map;
+			//------2018-08-14---------
+			// ------global parameter--------
+			// 4 parameters to store link capacity according to Face Uri:
+			// 07LinkCapacity 0aLinkCapacity 0cLinkCapacity 0eLinkCapacity
+			// 
+			// 4 parameters to store InData's amount according to Face Uri: (InData - xxInData == diff)
+			// 07InDataCounter 0aInDataCounter 0cInDataCounter 0eInDataCounter
+			std::map<std::string, std::vector<int>> mapFaceLinkData;
+			// 4 Time Point according to Face Uri: 
+			// 07TimePoint 0aTimePoint 0cTimePoint 0eTimePoint
+			// WHEN now() - timePoint == duration, THEN flowRate = diff*Data_Size / duration (bit/s)
+			std::map<std::string, std::chrono::system_clock::time_point> mapFaceTimePoint;
+
+			std::vector<std::string> prefixVec;
+
+			int FACECOUNTER_DURATION;
+			int DATA_SIZE;
 
 			// -------------------------
 		
